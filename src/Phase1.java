@@ -73,7 +73,10 @@ public class Phase1 {
                 for(int i = 0; i < 3; i++)
                 {
                     if(countedBits > 8L * length)
+                    {
                         return data;
+                    }
+
 
                     int bitMask = (pixels[i] & 1) << ((8 - (countedBits % 8)) %8);
                     thisByte = thisByte | bitMask;
@@ -86,6 +89,7 @@ public class Phase1 {
                     countedBits++;
                 }
             }
+            c = 0;
         }
         return data;
     }
