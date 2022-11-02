@@ -2,6 +2,7 @@
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 import java.io.File;
+import java.nio.Buffer;
 import javax.imageio.ImageIO;
 
 public class Phase1 {
@@ -27,7 +28,7 @@ public class Phase1 {
         System.out.println("Height: " + height + " Width: " + width);
         WritableRaster raster = image.getRaster();
         int lengthOrHeightOfHidden = getLengthOrHeight(raster, width, height);
-        System.out.println("Length or Height = " + lengthOrHeightOfHidden);
+        System.out.println("Length/Height of hidden message: " + lengthOrHeightOfHidden);
 
         if (args[1].equals("text")){
             // run the code to get the hidden text
@@ -36,7 +37,7 @@ public class Phase1 {
         }
         if (args[1].equals("png")){
             int widthOfHidden = getWidth(raster, width, height);
-            System.out.println(" Width of hidden image = " + widthOfHidden);
+            System.out.println(" Width of hidden message: " + widthOfHidden);
             // run the code to get hidden image
             //getData
         }
@@ -124,6 +125,40 @@ public class Phase1 {
                 for(int i = 0; i < 3; i++)
                 {
                     if(countedBits > 8L * length)
+                        return data;
+
+                    int bitMask = (pixels[i] & 1) << ((8 - (countedBits % 8)) %8);
+                    thisByte = thisByte | bitMask;
+                    if (countedBits % 8 == 0)
+                    {
+                        data += (char) thisByte;
+                        thisByte = 0;
+                    }
+                    countedBits++;
+                }
+            }
+            c = 0;
+        }
+        return data;
+    }
+    public static String getImageData(int heightOfHidden, int widthOfHidden, WritableRaster raster, int width, int height)
+    {
+        BufferedImage hiddenImage = new BufferedImage(widthOfHidden, heightOfHidden, BufferedImage.TYPE_INT_RGB);
+        WritableRaster hiddenImageRaster = hiddenImage.getRaster();
+        String data = "";
+        int r = 0;
+        int c = 10;
+        int[] pixels = raster.getPixel(c, r, (int[]) null);
+        int thisByte =  (pixels[2] & 1) << 7;
+        long countedBits = 2;
+        c++;
+        for (; r < height; r++) {
+            for (; c < width; c++) {
+
+                pixels = raster.getPixel(c, r, (int[]) null);
+                for(int i = 0; i < 3; i++)
+                {
+                    if(countedBits > 8L * heightOfHidden)
                         return data;
 
                     int bitMask = (pixels[i] & 1) << ((8 - (countedBits % 8)) %8);
