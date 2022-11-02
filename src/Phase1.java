@@ -26,21 +26,22 @@ public class Phase1 {
         int height = image.getHeight();
         System.out.println("Height: " + height + " Width: " + width);
         WritableRaster raster = image.getRaster();
-
+        int lengthOrHeight = getLengthOrHeight(raster, width, height);
+        System.out.println(lengthOrHeight);
         if (args[1] == "text"){
             // run the code to get the hidden text
+            String data = getData(lengthOrHeight, raster, width, height);
+            System.out.println(data);
         }
         if (args[1] == "png"){
             // run the code to get hidden image
         }
 
-        int length = getLengthOrHeight(raster, width, height);
-        System.out.println(length);
-        String data = getData(length, raster, width, height);
-        System.out.println(data);
-        //testCode(raster, width, height);
+
 
     }
+
+
 
     public static void testCode(WritableRaster raster, int width, int height)
     {
@@ -95,16 +96,12 @@ public class Phase1 {
                 for(int i = 0; i < 3; i++)
                 {
                     if(countedBits > 8L * length)
-                    {
                         return data;
-                    }
-
 
                     int bitMask = (pixels[i] & 1) << ((8 - (countedBits % 8)) %8);
                     thisByte = thisByte | bitMask;
                     if (countedBits % 8 == 0)
                     {
-                        //System.out.println(thisByte);
                         data += (char) thisByte;
                         thisByte = 0;
                     }
