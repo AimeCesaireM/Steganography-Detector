@@ -39,6 +39,8 @@ public class Phase1 {
             int widthOfHidden = getWidth(raster, width, height);
             System.out.println(" Width of hidden message: " + widthOfHidden);
             // run the code to get hidden image
+            BufferedImage decodedImage = getImageData(lengthOrHeightOfHidden, widthOfHidden, raster, width, height);
+            ImageIO.write(decodedImage, "png", new File("decodedImage.png"));
             //getData
         }
 
@@ -141,16 +143,20 @@ public class Phase1 {
         }
         return data;
     }
-    public static String getImageData(int heightOfHidden, int widthOfHidden, WritableRaster raster, int width, int height)
+    public static BufferedImage getImageData(int heightOfHidden, int widthOfHidden, WritableRaster raster, int width, int height)
     {
         BufferedImage hiddenImage = new BufferedImage(widthOfHidden, heightOfHidden, BufferedImage.TYPE_INT_RGB);
         WritableRaster hiddenImageRaster = hiddenImage.getRaster();
-        String data = "";
-        int r = 0;
-        int c = 10;
-        int[] pixels = raster.getPixel(c, r, (int[]) null);
-        int thisByte =  (pixels[2] & 1) << 7;
-        long countedBits = 2;
+        int r = 0; //row for Input Image
+        int c = 21;//col for Input Image
+        int[] pixels = raster.getPixel(c, r, (int[]) null); //Pixels of input Image
+        int[] setPixels = new int[3];//Pixels of outputImage
+        int pixelIndex = 0;//index of Color Within a pixel for output image
+        int rowIndex = 0;//Index of row for output image
+        int colIndex = 0;//Index of col for output image
+        int thisByte =  (pixels[1] & 1) << 7;
+        thisByte = thisByte | ((pixels[2] & 1) << 6);
+        long countedBits = 3;
         c++;
         for (; r < height; r++) {
             for (; c < width; c++) {
@@ -158,21 +164,34 @@ public class Phase1 {
                 pixels = raster.getPixel(c, r, (int[]) null);
                 for(int i = 0; i < 3; i++)
                 {
-                    if(countedBits > 8L * heightOfHidden)
-                        return data;
+                    if(countedBits > 8L * heightOfHidden * widthOfHidden * 3)
+                        return hiddenImage;
 
                     int bitMask = (pixels[i] & 1) << ((8 - (countedBits % 8)) %8);
                     thisByte = thisByte | bitMask;
                     if (countedBits % 8 == 0)
                     {
-                        data += (char) thisByte;
+                        setPixels[pixelIndex] = thisByte;
                         thisByte = 0;
+                        pixelIndex++;
+                        if(pixelIndex == 3)
+                        {
+                            pixelIndex = 0;
+                            hiddenImageRaster.setPixel(colIndex, rowIndex, setPixels);
+                            setPixels = new int[3]; //Only need this if setPixel() does not copy the array to it.
+                            colIndex++;
+                            if(colIndex == widthOfHidden)
+                            {
+                                colIndex = 0;
+                                rowIndex++;
+                            }
+                        }
                     }
                     countedBits++;
                 }
             }
             c = 0;
         }
-        return data;
+        return hiddenImage;
     }
 }
