@@ -10,7 +10,7 @@ public class Phase1 {
 
         if (args.length != 2) {
             //error because we need two arguments
-            System.err.println("Usage: decoder [filename] [HiddenMessageType]");
+            System.err.println("Usage: Phase1 [filename] [HiddenMessageType]");
             System.err.println("HiddenMessageType: 'png' or 'text'");
             System.exit (1);
         }
@@ -27,15 +27,16 @@ public class Phase1 {
         System.out.println("Height: " + height + " Width: " + width);
         WritableRaster raster = image.getRaster();
         int lengthOrHeightOfHidden = getLengthOrHeight(raster, width, height);
-        System.out.println(lengthOrHeightOfHidden);
+        System.out.println("Length or Height = " + lengthOrHeightOfHidden);
 
         if (args[1].equals("text")){
             // run the code to get the hidden text
             String data = getTextData(lengthOrHeightOfHidden, raster, width, height);
-            System.out.println(data);
+            System.out.println("Hidden Text: \n" + data);
         }
         if (args[1].equals("png")){
             int widthOfHidden = getWidth(raster, width, height);
+            System.out.println(" Width of hidden image = " + widthOfHidden);
             // run the code to get hidden image
             //getData
         }
