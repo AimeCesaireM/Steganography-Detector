@@ -7,12 +7,34 @@ import javax.imageio.ImageIO;
 public class Phase1 {
 
     public static void main(String[] args) throws Exception {
-        BufferedImage image = ImageIO.read(new File("src/hide_text.png"));
+
+        if (args.length != 2) {
+            //error because we need two arguments
+            System.err.println("Usage: decoder [filename] [HiddenMessageType]");
+            System.err.println("HiddenMessageType: 'png' or 'text'");
+            System.exit (1);
+        }
+        else if (args[0] =="" || args[1] != "text" || args[1] != "png") {
+            //error because we need two arguments
+            System.err.println("Usage: decoder [filename] [HiddenMessageType]");
+            System.err.println("HiddenMessageType: 'png' or 'text'");
+            System.exit(1);
+        }
+        String pathname = args[0];
+        BufferedImage image = ImageIO.read(new File(pathname));
         int width = image.getWidth();
         int height = image.getHeight();
         System.out.println("Height: " + height + " Width: " + width);
         WritableRaster raster = image.getRaster();
-        int length = lengthOfData(raster, width, height);
+
+        if (args[1] == "text"){
+            // run the code to get the hidden text
+        }
+        if (args[1] == "png"){
+            // run the code to get hidden image
+        }
+
+        int length = getLengthOrHeight(raster, width, height);
         System.out.println(length);
         String data = getData(length, raster, width, height);
         System.out.println(data);
@@ -35,7 +57,7 @@ public class Phase1 {
         }
     }
 
-    public static int lengthOfData(WritableRaster raster, int width, int height)
+    public static int getLengthOrHeight(WritableRaster raster, int width, int height)
     {
         int count = 31;
         int length = 0;
