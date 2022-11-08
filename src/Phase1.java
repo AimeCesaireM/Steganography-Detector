@@ -2,23 +2,27 @@
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 import java.io.File;
-import java.nio.Buffer;
 import javax.imageio.ImageIO;
 
 public class Phase1 {
+
+    static int globalRowIndex;
+    static int globalColIndex;
+    static int globalPixelIndex;
+    static int numberOfPixelChannels;
 
     public static void main(String[] args) throws Exception {
 
         if (args.length != 2) {
             //error because we need two arguments
             System.err.println("Usage: Phase1 [filename] [HiddenMessageType]");
-            System.err.println("HiddenMessageType: 'png' or 'text'");
+            System.err.println("HiddenMessageType: 'png' or 'text' or 'lw'");
             System.exit (1);
         }
-        else if (args[0].equals("") || (!args[1].equals("text") && !args[1].equals("png"))) {
+        else if (args[0].equals("") || (!args[1].equals("text") && !args[1].equals("png") && !args[1].equals("lw"))) {
             //error because we need two arguments
             System.err.println("Usage: decoder [filename] [HiddenMessageType]");
-            System.err.println("HiddenMessageType: 'png' or 'text'");
+            System.err.println("HiddenMessageType: 'png' or 'text' or 'lw'");
             System.exit(1);
         }
         String pathname = args[0];
@@ -27,7 +31,13 @@ public class Phase1 {
         int height = image.getHeight();
         System.out.println("Height: " + height + " Width: " + width);
         WritableRaster raster = image.getRaster();
-        int lengthOrHeightOfHidden = getLengthOrHeight(raster, width, height);
+
+        globalRowIndex = 0;
+        globalColIndex = 0;
+        globalPixelIndex = 0;
+        numberOfPixelChannels = 3;
+
+        int lengthOrHeightOfHidden = getNextIntFromImage(raster, width, height);
         System.out.println("Length/Height of hidden message: " + lengthOrHeightOfHidden);
 
         if (args[1].equals("text")){
@@ -35,163 +45,88 @@ public class Phase1 {
             String data = getTextData(lengthOrHeightOfHidden, raster, width, height);
             System.out.println("Hidden Text: \n" + data);
         }
-        if (args[1].equals("png")){
-            int widthOfHidden = getWidth(raster, width, height);
+        else if (args[1].equals("png")){
+            int widthOfHidden = getNextIntFromImage(raster, width, height);
             System.out.println(" Width of hidden message: " + widthOfHidden);
             // run the code to get hidden image
             BufferedImage decodedImage = getImageData(lengthOrHeightOfHidden, widthOfHidden, raster, width, height);
             ImageIO.write(decodedImage, "png", new File("decodedImage.png"));
             //getData
         }
-
-    }
-
-
-    public static void testCode(WritableRaster raster, int width, int height)
-    {
-
-        int count = 0;
-        for (int r = 0; r < height; r++) {
-            for (int c = 0; c < width; c++) {
-                int[] pixels = raster.getPixel(c, r, (int[]) null);
-                if (count < 32){
-                    System.out.print((pixels[0] & 1) + "" +  (pixels[1] & 1) + "" +  (pixels[2] & 1));
-                    count ++;
-                }
-            }
+        else if (args[1].equals("lw")){
+            int widthOfHidden = getNextIntFromImage(raster, width, height);
+            System.out.println(" Width of hidden message: " + widthOfHidden);
         }
+
     }
 
-    public static int getLengthOrHeight(WritableRaster raster, int width, int height)
+    public static int getNextIntFromImage(WritableRaster raster, int width, int height)
     {
-        int count = 31;
-        int length = 0;
-        for (int r = 0; r < height; r++) {
-            for (int c = 0; c < width; c++) {
+        return getNextXBits(raster, width, height, 32);
+    }
 
-                int[] pixels = raster.getPixel(c, r, (int[]) null);
-                for(int i = 0; i < 3; i++)
+    public static int getNextByteFromImage(WritableRaster raster, int width, int height)
+    {
+        return getNextXBits(raster, width, height, 8);
+    }
+
+    public static int getNextXBits(WritableRaster raster, int width, int height, int xBits)
+    {
+        xBits -= 1;
+        int returnValue = 0;
+        for (; globalRowIndex < height; globalRowIndex++) {
+            for (; globalColIndex < width; globalColIndex++) {
+
+                int[] pixels = raster.getPixel(globalColIndex, globalRowIndex, (int[]) null);
+                for(; globalPixelIndex < numberOfPixelChannels; globalPixelIndex++)
                 {
-                    if(count < 0)
-                        return length;
+                    if(xBits < 0)
+                        return returnValue;
 
-                    int bitMask = (pixels[i] & 1) << count;
-                    length = length | bitMask;
-                    count--;
+                    int bitMask = (pixels[globalPixelIndex] & 1) << xBits;
+                    returnValue = returnValue | bitMask;
+                    xBits--;
                 }
+                globalPixelIndex = 0;
             }
+            globalColIndex = 0;
         }
-        return -1;
-    }
-
-    public static int getWidth(WritableRaster raster, int width, int height)
-    {
-        int r = 0;
-        int c = 10;
-        int[] pixels = raster.getPixel(c, r, (int[]) null);
-        int length =  (pixels[2] & 1) << 31;
-        int count = 30;
-        c++;
-        for (; r < height; r++) {
-            for (; c < width; c++) {
-
-                pixels = raster.getPixel(c, r, (int[]) null);
-                for(int i = 0; i < 3; i++)
-                {
-                    if(count < 0)
-                        return length;
-
-                    int bitMask = (pixels[i] & 1) << count;
-                    length = length | bitMask;
-                    count--;
-                }
-            }
-            c = 0;
-        }
+        System.err.println("getNextBits exited Unexpectedly");
         return -1;
     }
 
     public static String getTextData(int length, WritableRaster raster, int width, int height)
     {
         String data = "";
-        int r = 0;
-        int c = 10;
-        int[] pixels = raster.getPixel(c, r, (int[]) null);
-        int thisByte =  (pixels[2] & 1) << 7;
-        long countedBits = 2;
-        c++;
-        for (; r < height; r++) {
-            for (; c < width; c++) {
-
-                pixels = raster.getPixel(c, r, (int[]) null);
-                for(int i = 0; i < 3; i++)
-                {
-                    if(countedBits > 8L * length)
-                        return data;
-
-                    int bitMask = (pixels[i] & 1) << ((8 - (countedBits % 8)) %8);
-                    thisByte = thisByte | bitMask;
-                    if (countedBits % 8 == 0)
-                    {
-                        data += (char) thisByte;
-                        thisByte = 0;
-                    }
-                    countedBits++;
-                }
-            }
-            c = 0;
+        int thisByte;
+        long countedBytes = 0;
+        while(countedBytes < length)
+        {
+            thisByte = getNextByteFromImage(raster, width, height);
+            data += (char) thisByte;
+            countedBytes++;
         }
         return data;
     }
+
     public static BufferedImage getImageData(int heightOfHidden, int widthOfHidden, WritableRaster raster, int width, int height)
     {
         BufferedImage hiddenImage = new BufferedImage(widthOfHidden, heightOfHidden, BufferedImage.TYPE_INT_RGB);
         WritableRaster hiddenImageRaster = hiddenImage.getRaster();
-        int r = 0; //row for Input Image
-        int c = 21;//col for Input Image
-        int[] pixels = raster.getPixel(c, r, (int[]) null); //Pixels of input Image
-        int[] setPixels = new int[3];//Pixels of outputImage
-        int pixelIndex = 0;//index of Color Within a pixel for output image
-        int rowIndex = 0;//Index of row for output image
-        int colIndex = 0;//Index of col for output image
-        int thisByte =  (pixels[1] & 1) << 7;
-        thisByte = thisByte | ((pixels[2] & 1) << 6);
-        long countedBits = 3;
-        c++;
-        for (; r < height; r++) {
-            for (; c < width; c++) {
-
-                pixels = raster.getPixel(c, r, (int[]) null);
-                for(int i = 0; i < 3; i++)
+        int[] setPixels;//Pixels of outputImage
+        for(int outputImageRow = 0; outputImageRow < heightOfHidden; outputImageRow++)
+        {
+            for(int outputImageCol = 0; outputImageCol < widthOfHidden; outputImageCol++)
+            {
+                setPixels = new int[3];
+                for(int outputPixelChannel  = 0; outputPixelChannel < 3; outputPixelChannel++)
                 {
-                    if(countedBits > 8L * heightOfHidden * widthOfHidden * 3)
-                        return hiddenImage;
-
-                    int bitMask = (pixels[i] & 1) << ((8 - (countedBits % 8)) %8);
-                    thisByte = thisByte | bitMask;
-                    if (countedBits % 8 == 0)
-                    {
-                        setPixels[pixelIndex] = thisByte;
-                        thisByte = 0;
-                        pixelIndex++;
-                        if(pixelIndex == 3)
-                        {
-                            pixelIndex = 0;
-                            hiddenImageRaster.setPixel(colIndex, rowIndex, setPixels);
-                            setPixels = new int[3]; //Only need this if setPixel() does not copy the array to it.
-                            colIndex++;
-                            if(colIndex == widthOfHidden)
-                            {
-                                colIndex = 0;
-                                rowIndex++;
-                            }
-                        }
-                    }
-                    countedBits++;
+                    setPixels[outputPixelChannel] = getNextByteFromImage(raster, width, height);
                 }
+                hiddenImageRaster.setPixel(outputImageCol, outputImageRow, setPixels);
             }
-            c = 0;
         }
+
         return hiddenImage;
     }
 }
