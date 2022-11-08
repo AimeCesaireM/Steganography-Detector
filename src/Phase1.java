@@ -2,7 +2,6 @@
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 import java.io.File;
-import java.util.Locale;
 import javax.imageio.ImageIO;
 
 public class Phase1 {
@@ -19,13 +18,13 @@ public class Phase1 {
 
         if (args.length != 6) {
             //error because we need six arguments
-            System.err.println("Usage: Phase1 [filename] [HiddenMessageType] [LRTBOrTBLR] [GRB] [pixelChannels] [leastSignificantBits]");
+            System.err.println("Usage: Phase1 [filename] [HiddenMessageType] [LRTBOrTBLR] [GRBorBRG] [#pixelChannels] [leastSignificantBits]");
             System.err.println("HiddenMessageType: 'png' or 'text' or 'lw'");
             System.exit (1);
         }
         else if (args[0].equals("") || (!args[1].equals("text") && !args[1].equals("png") && !args[1].equals("lw"))) {
             //error because we need two arguments
-            System.err.println("Usage: Phase1 [filename] [HiddenMessageType]");
+            System.err.println("Usage: Phase1 [filename] [HiddenMessageType] [LRTBOrTBLR] [GRBorBRG] [#pixelChannels] [leastSignificantBits]");
             System.err.println("HiddenMessageType: 'png' or 'text' or 'lw'");
             System.exit(1);
         }
@@ -45,7 +44,6 @@ public class Phase1 {
         globalColIndex = 0;
         globalPixelIndex = 0;
 
-
         int lengthOrHeightOfHidden = getNextIntFromImage(raster, width, height);
         System.out.println("Length/Height of hidden message: " + lengthOrHeightOfHidden);
 
@@ -59,7 +57,14 @@ public class Phase1 {
             System.out.println(" Width of hidden message: " + widthOfHidden);
             // run the code to get hidden image
             BufferedImage decodedImage = getImageData(lengthOrHeightOfHidden, widthOfHidden, raster, width, height);
-            ImageIO.write(decodedImage, "png", new File("decodedImage.png"));
+            String path = "Decoding/";
+            path += args[0].split("\\.")[0];
+            path += "/";
+            path += args[2] + " " + args[3] + " " + args[4] + " " + args[5] + ".png";
+
+            System.out.println(path);
+
+            ImageIO.write(decodedImage, "png", new File(path));
             //getData
         }
         else if (args[1].equals("lw")){
