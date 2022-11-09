@@ -15,7 +15,7 @@ public class Phase1 {
     static int leastSignificantBits;
 
     public static void main(String[] args) throws Exception {
-
+        //System.out.println(Integer.toBinaryString(reverseChannel(Integer.parseInt("11111110", 2))));
         if (args.length < 2) {
             //error because we need at least six arguments
             System.err.println("Usage: Phase1 [filename] [HiddenMessageType] [LRTBOrTBLR] [leastSignificantBits] [arrayOfPixelChannels]");
@@ -50,7 +50,8 @@ public class Phase1 {
         if (args[1].equals("lw")){
             boolean[] lrtbArray = {true, false};
             int[] lsbArray = {1, 2, 3, 4, 5, 6};
-            int[][] pixelChannelArrays = {{0}, {1}, {2}, {0, 1}, {1, 2}, {0, 2}, {1, 0}, {2, 1}, {2, 0}, {0, 1, 2}, {2, 1, 0}};
+            int[][] pixelChannelArrays = {{0}, {1}, {2}, {0, 1}, {1, 2}, {0, 2}, {1, 0}, {2, 1}, {2, 0}, {0, 1, 2}, {2, 1, 0},
+                    {0, 1, 2, 3},{3}, {0, 1, 3}, {0, 2, 3}, {0, 3}, {0, 3}, {1, 3}, {2, 3}, {0, 1, 2, 3} };
             for (boolean lrtb: lrtbArray) {
                 isLRTB = lrtb;
                 for (int lsb: lsbArray) {
@@ -227,14 +228,17 @@ public class Phase1 {
         BufferedImage hiddenImage = new BufferedImage(widthOfHidden, heightOfHidden, type);
         WritableRaster hiddenImageRaster = hiddenImage.getRaster();
         int[] setPixels;//Pixels of outputImage
-        for(int outputImageRow = 0; outputImageRow < heightOfHidden; outputImageRow++)
+        for(int outputImageCol = 0; outputImageCol < widthOfHidden; outputImageCol++)
         {
-            for(int outputImageCol = 0; outputImageCol < widthOfHidden; outputImageCol++)
+            for(int outputImageRow = 0; outputImageRow < heightOfHidden; outputImageRow++)
+
             {
                 setPixels = new int[3];
                 for(int outputPixelChannel  = 0; outputPixelChannel < 3; outputPixelChannel++)
                 {
-                    setPixels[outputPixelChannel] = getNextByteFromImage(raster, width, height);
+                    int channel = 2 - outputPixelChannel;
+                    setPixels[channel] = getNextByteFromImage(raster, width, height);
+                    setPixels[channel] = reverseChannel(setPixels[channel]);
                 }
                 hiddenImageRaster.setPixel(outputImageCol, outputImageRow, setPixels);
             }
@@ -267,5 +271,20 @@ public class Phase1 {
         }
         return outputImage;
 
+    }
+    private static int reverseChannel (int n) {
+        //int result = 0;
+        int leading = n / 128;
+        int leading_1 = (n % 128) / 64 ;
+        int leading_2 = (n % 64) / 32;
+        int leading_3 = (n % 32) / 16;
+        int leading_4 = (n % 16) / 8 ;
+        int leading_5 = (n % 8) / 4;
+        int leading_6 = (n % 4) / 2;
+        int ones = n % 2;
+        int result = (leading) + (leading_1 * 2) + (leading_2 * 4) + (leading_3 * 8) + (leading_4 * 16)
+                + (leading_5 * 32) + (leading_6 * 64) + (ones * 128);
+
+        return result;
     }
 }
