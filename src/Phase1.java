@@ -2,6 +2,7 @@
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 import java.io.File;
+import java.io.IOException;
 import javax.imageio.ImageIO;
 
 public class Phase1 {
@@ -9,40 +10,91 @@ public class Phase1 {
     static int globalRowIndex;
     static int globalColIndex;
     static int globalPixelIndex;
-    static int numberOfPixelChannels;
+    static int[] pixelChannels;
     static boolean isLRTB;
-    static boolean isGRB;
     static int leastSignificantBits;
 
     public static void main(String[] args) throws Exception {
 
-        if (args.length != 6) {
-            //error because we need six arguments
-            System.err.println("Usage: Phase1 [filename] [HiddenMessageType] [LRTBOrTBLR] [GRBorBRG] [#pixelChannels] [leastSignificantBits]");
+        if (args.length < 2) {
+            //error because we need at least six arguments
+            System.err.println("Usage: Phase1 [filename] [HiddenMessageType] [LRTBOrTBLR] [leastSignificantBits] [arrayOfPixelChannels]");
             System.err.println("HiddenMessageType: 'png' or 'text' or 'lw'");
             System.exit (1);
+
         }
         else if (args[0].equals("") || (!args[1].equals("text") && !args[1].equals("png") && !args[1].equals("lw"))) {
-            //error because we need two arguments
-            System.err.println("Usage: Phase1 [filename] [HiddenMessageType] [LRTBOrTBLR] [GRBorBRG] [#pixelChannels] [leastSignificantBits]");
+            //
+            System.err.println("Usage: Phase1 [filename] [HiddenMessageType] [LRTBOrTBLR] [leastSignificantBits] [arrayOfPixelChannels]");
             System.err.println("HiddenMessageType: 'png' or 'text' or 'lw'");
             System.exit(1);
         }
+        else if (args.length < 5 && !args[1].equals("lw"))
+        {
+            System.err.println("Usage: Phase1 [filename] [HiddenMessageType] [LRTBOrTBLR] [leastSignificantBits] [arrayOfPixelChannels]");
+            System.err.println("HiddenMessageType: 'png' or 'text' or 'lw'");
+            System.exit(1);
+        }
+
         String pathname = args[0];
         BufferedImage image = ImageIO.read(new File(pathname));
+//        BufferedImage testImage = getImageWithLeastSignificantBit(image);
+//        ImageIO.write(testImage, "png", new File("leastSigBitTestImage.png"));
         int width = image.getWidth();
         int height = image.getHeight();
-        System.out.println("Height: " + height + " Width: " + width);
+        int type = image.getType();
+        System.out.println("Height: " + height + " Width: " + width +  " Type: " + type);
         WritableRaster raster = image.getRaster();
 
+
+        if (args[1].equals("lw")){
+            boolean[] lrtbArray = {true, false};
+            int[] lsbArray = {1, 2, 3, 4, 5, 6};
+            int[][] pixelChannelArrays = {{0}, {1}, {2}, {0, 1}, {1, 2}, {0, 2}, {1, 0}, {2, 1}, {2, 0}, {0, 1, 2}, {2, 1, 0}};
+            for (boolean lrtb: lrtbArray) {
+                isLRTB = lrtb;
+                for (int lsb: lsbArray) {
+                    leastSignificantBits = lsb;
+                    for (int[] pixelChannelArray: pixelChannelArrays) {
+                        pixelChannels = pixelChannelArray;
+
+                        globalRowIndex = 0;
+                        globalColIndex = 0;
+                        globalPixelIndex = 0;
+                        int l = getNextIntFromImage(raster, width, height);
+
+                        if (l < 10000 && l > 0)
+                        {
+                            System.out.print("With LRTB = " + lrtb + " and  lsb = " + lsb + " and pixel channels being { ");
+                            for (int j : pixelChannelArray) {
+                                System.out.print(j + " ");
+                            }
+                            System.out.println("} l is " + l);
+                            int w = getNextIntFromImage(raster, width, height);
+                            if (w < 10000 && w > 0)
+                            {
+                                System.out.println("And w is " + w);
+                            }
+                        }
+
+                    }
+                }
+
+            }
+
+            return;
+        }
         isLRTB = args[2].equals("LRTB");
-        isGRB = args[3].equals("GRB");
-        numberOfPixelChannels = Integer.parseInt(args[4]);
-        leastSignificantBits = Integer.parseInt(args[5]);
+        leastSignificantBits = Integer.parseInt(args[3]);
 
         globalRowIndex = 0;
         globalColIndex = 0;
         globalPixelIndex = 0;
+
+        pixelChannels = new int[args.length - 4];
+        for (int i = 0; i < pixelChannels.length; i++) {
+            pixelChannels[i] = Integer.parseInt(args[4+ i]);
+        }
 
         int lengthOrHeightOfHidden = getNextIntFromImage(raster, width, height);
         System.out.println("Length/Height of hidden message: " + lengthOrHeightOfHidden);
@@ -56,20 +108,19 @@ public class Phase1 {
             int widthOfHidden = getNextIntFromImage(raster, width, height);
             System.out.println(" Width of hidden message: " + widthOfHidden);
             // run the code to get hidden image
-            BufferedImage decodedImage = getImageData(lengthOrHeightOfHidden, widthOfHidden, raster, width, height);
+            BufferedImage decodedImage = getImageData(lengthOrHeightOfHidden, widthOfHidden, raster, width, height, type);
             String path = "Decoding/";
             path += args[0].split("\\.")[0];
             path += "/";
-            path += args[2] + " " + args[3] + " " + args[4] + " " + args[5] + ".png";
+            for (int i = 2; i < args.length - 1; i++) {
+                path += args[i] + " ";
+            }
+            path += args[args.length - 1] + ".png";
 
             System.out.println(path);
 
             ImageIO.write(decodedImage, "png", new File(path));
             //getData
-        }
-        else if (args[1].equals("lw")){
-            int widthOfHidden = getNextIntFromImage(raster, width, height);
-            System.out.println(" Width of hidden message: " + widthOfHidden);
         }
 
     }
@@ -87,23 +138,13 @@ public class Phase1 {
     public static int getNextXBits(WritableRaster raster, int width, int height, int xBits)
     {
         if(isLRTB)
-        {
-            if(isGRB)
-                return LRTBAndGRB(raster, width, height, xBits);
-
-            return LRTBAndBRG(raster, width, height, xBits);
-        }
-
-        //So it is TBLR
-        if(isGRB)
-            return TBLRAndGRB(raster, width, height, xBits);
-
-        return TBLRAndBRG(raster, width, height, xBits);
+            return LRTB(raster, width, height, xBits);
+        return TBLR(raster, width, height, xBits);
 
     }
 
 
-    public static int LRTBAndGRB(WritableRaster raster, int width, int height, int xBits)
+    public static int LRTB(WritableRaster raster, int width, int height, int xBits)
     {
         xBits -= leastSignificantBits;
         int returnValue = 0;
@@ -111,12 +152,12 @@ public class Phase1 {
             for (; globalColIndex < width; globalColIndex++) {
 
                 int[] pixels = raster.getPixel(globalColIndex, globalRowIndex, (int[]) null);
-                for(; globalPixelIndex < numberOfPixelChannels; globalPixelIndex++)
+                for(; globalPixelIndex < pixelChannels.length; globalPixelIndex++)
                 {
                     if(xBits < 0)
                         return returnValue;
 
-                    int bitMask = (pixels[globalPixelIndex] & getMasker(leastSignificantBits)) << xBits;
+                    int bitMask = (pixels[pixelChannels[globalPixelIndex]] & getMasker(leastSignificantBits)) << xBits;
                     returnValue = returnValue | bitMask;
                     xBits -= leastSignificantBits;
                 }
@@ -128,7 +169,7 @@ public class Phase1 {
         return -1;
     }
 
-    public static int TBLRAndGRB(WritableRaster raster, int width, int height, int xBits)
+    public static int TBLR(WritableRaster raster, int width, int height, int xBits)
     {
         xBits -= leastSignificantBits;
         int returnValue = 0;
@@ -136,67 +177,18 @@ public class Phase1 {
             for (; globalRowIndex < height; globalRowIndex++) {
 
                 int[] pixels = raster.getPixel(globalColIndex, globalRowIndex, (int[]) null);
-                for(; globalPixelIndex < numberOfPixelChannels; globalPixelIndex++)
+                for(; globalPixelIndex < pixelChannels.length; globalPixelIndex++)
                 {
                     if(xBits < 0)
                         return returnValue;
 
-                    int bitMask = (pixels[globalPixelIndex] & getMasker(leastSignificantBits)) << xBits;
+                    int bitMask = (pixels[pixelChannels[globalPixelIndex]] & getMasker(leastSignificantBits)) << xBits;
                     returnValue = returnValue | bitMask;
                     xBits -= leastSignificantBits;
                 }
                 globalPixelIndex = 0;
             }
             globalRowIndex = 0;
-        }
-        System.err.println("getNextBits exited Unexpectedly");
-        return -1;
-    }
-
-    public static int TBLRAndBRG(WritableRaster raster, int width, int height, int xBits)
-    {
-        xBits -= leastSignificantBits;
-        int returnValue = 0;
-        for (; globalColIndex < width; globalColIndex++) {
-            for (; globalRowIndex < height; globalRowIndex++) {
-
-                int[] pixels = raster.getPixel(globalColIndex, globalRowIndex, (int[]) null);
-                for(; globalPixelIndex >= 0; globalPixelIndex--)
-                {
-                    if(xBits < 0)
-                        return returnValue;
-
-                    int bitMask = (pixels[globalPixelIndex] & getMasker(leastSignificantBits)) << xBits;
-                    returnValue = returnValue | bitMask;
-                    xBits -= leastSignificantBits;
-                }
-                globalPixelIndex = numberOfPixelChannels - 1;
-            }
-            globalRowIndex = 0;
-        }
-        System.err.println("getNextBits exited Unexpectedly");
-        return -1;
-    }
-    public static int LRTBAndBRG(WritableRaster raster, int width, int height, int xBits)
-    {
-        xBits -= leastSignificantBits;
-        int returnValue = 0;
-        for (; globalRowIndex < height; globalRowIndex++) {
-            for (; globalColIndex < width; globalColIndex++) {
-
-                int[] pixels = raster.getPixel(globalColIndex, globalRowIndex, (int[]) null);
-                for(; globalPixelIndex >= 0; globalPixelIndex--)
-                {
-                    if(xBits < 0)
-                        return returnValue;
-
-                    int bitMask = (pixels[globalPixelIndex] & getMasker(leastSignificantBits)) << xBits;
-                    returnValue = returnValue | bitMask;
-                    xBits -= leastSignificantBits;
-                }
-                globalPixelIndex = numberOfPixelChannels - 1;
-            }
-            globalColIndex = 0;
         }
         System.err.println("getNextBits exited Unexpectedly");
         return -1;
@@ -204,8 +196,14 @@ public class Phase1 {
 
     public static int getMasker(int bits)
     {
-        if (bits == 1) return 1;
-        if (bits == 2) return 3;
+        if (bits > 0 && bits < 9)
+        {
+            String s = "";
+            for (int i = 0; i < bits; i++) {
+                s+= '1';
+            }
+            return Integer.parseInt(s, 2);
+        }
         System.err.println("Unexpected bits given to getMasker");
         return -1;
     }
@@ -224,9 +222,9 @@ public class Phase1 {
         return data;
     }
 
-    public static BufferedImage getImageData(int heightOfHidden, int widthOfHidden, WritableRaster raster, int width, int height)
+    public static BufferedImage getImageData(int heightOfHidden, int widthOfHidden, WritableRaster raster, int width, int height, int type)
     {
-        BufferedImage hiddenImage = new BufferedImage(widthOfHidden, heightOfHidden, BufferedImage.TYPE_INT_RGB);
+        BufferedImage hiddenImage = new BufferedImage(widthOfHidden, heightOfHidden, type);
         WritableRaster hiddenImageRaster = hiddenImage.getRaster();
         int[] setPixels;//Pixels of outputImage
         for(int outputImageRow = 0; outputImageRow < heightOfHidden; outputImageRow++)
@@ -243,5 +241,31 @@ public class Phase1 {
         }
 
         return hiddenImage;
+    }
+    public static BufferedImage getImageWithLeastSignificantBit(BufferedImage image) throws IOException {
+        BufferedImage outputImage = new BufferedImage(image.getWidth(), image.getHeight(), image.getType());
+        WritableRaster outputRaster = outputImage.getRaster();
+
+        int[] pixel;
+        for (int r = 0; r < image.getHeight(); r ++)
+        {
+            for (int c = 0; c < image.getWidth(); c++)
+            {
+                pixel = image.getRaster().getPixel(c, r, (int[]) null);
+
+                pixel[0] = (pixel[0] & 1) ;
+                pixel[1] = (pixel[1] & 1) ;
+                pixel[2] = (pixel[2] & 1) ;
+
+                pixel[0] = pixel[0] > 0 ? 255: 0;
+                pixel[1] = pixel[1] > 0 ? 255: 0;
+                pixel[2] = pixel[2] > 0 ? 255: 0;
+          //      System.out.println(Arrays.toString(pixel));
+                outputRaster.setPixel(c, r, pixel);
+
+            }
+        }
+        return outputImage;
+
     }
 }
