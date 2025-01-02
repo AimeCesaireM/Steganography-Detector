@@ -1,7 +1,7 @@
 # Phase1 - Image Steganography Decoder
 
 ## Overview
-The `Phase1` program decodes hidden messages (text or images) embedded within a source image using steganographic techniques. It supports decoding text and images by extracting least significant bits (LSBs) from pixel channels. The program also includes utilities to analyze raster image data.
+The `Phase1` program decodes hidden messages (text or images) embedded within a source image using steganographic techniques. It supports decoding text and images by extracting least significant bits (LSBs) from pixel channels. The program also includes utilities to analyze raster image data. This project was a collaboration between Ahsan Rhandawa and I.
 
 ## Features
 - Decode hidden text messages from images.
