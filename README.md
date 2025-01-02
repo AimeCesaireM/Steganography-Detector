@@ -82,6 +82,7 @@ Generates an image visualizing the least significant bits of the source image's 
 ## Limitations
 - Only supports decoding messages embedded using specific LSB steganography techniques.
 - Does not include error handling for unsupported image types or corrupted input.
+- I welcome any new contributions to my testing script
 
 ## License
 This project is licensed under the MIT License.
