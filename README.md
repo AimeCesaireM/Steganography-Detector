@@ -14,8 +14,12 @@ The `Phase1` program decodes hidden messages (text or images) embedded within a 
 - Java AWT and ImageIO libraries (included in standard JDK).
 
 ## Usage
-Go into the /src subfolder
-### Command-Line Arguments
+### 1. Download the zip of the repository and extract it 
+
+### 2. Navigate to the /src subfolder
+
+
+### 3. Open a termilan in this directory and run the command with these command-line arguments
 ```bash
 java Phase1 [filename] [HiddenMessageType] [LRTBOrTBLR] [rORfORsLength] [rORfORsData] [numberOfSignificantBits] [ArrayOFleastSignificantBits] [numberOfPixelChannels] [arrayOfPixelChannels]
 ```
