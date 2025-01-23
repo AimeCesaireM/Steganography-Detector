@@ -133,42 +133,40 @@ public class ExtractFunctionGUI {
         gbc.gridwidth = 3;
         frame.add(scrollPane, gbc);
 
-        runButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String filename = filenameField.getText();
-                String hiddenMessageType = (String) hiddenMessageTypeCombo.getSelectedItem();
-                String lrtbOrTblr = lrtbOrTblrField.getText();
-                String rorfOrsLength = (String) rorfOrsLengthCombo.getSelectedItem();
-                String rorfOrsData = rorfOrsDataField.getText();
+        runButton.addActionListener(e -> {
+            String filename = filenameField.getText();
+            String hiddenMessageType = (String) hiddenMessageTypeCombo.getSelectedItem();
+            String lrtbOrTblr = lrtbOrTblrField.getText();
+            String rorfOrsLength = (String) rorfOrsLengthCombo.getSelectedItem();
+            String rorfOrsData = rorfOrsDataField.getText();
 
-                String arrayOfLeastSignificantBits = arrayOfLeastSignificantBitsDataField.getText();
-                String numberOfPixelChannels = numberOfPixelChannelsDataField.getText();
-                String arrayOfPixelChannels = arrayOfPixelChanneldDataField.getText();
+            String arrayOfLeastSignificantBits = arrayOfLeastSignificantBitsDataField.getText();
+            String numberOfPixelChannels = numberOfPixelChannelsDataField.getText();
+            String arrayOfPixelChannels = arrayOfPixelChanneldDataField.getText();
 
 
-                if (filename.isEmpty()) {
-                    JOptionPane.showMessageDialog(frame, "Filename is required!", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
+            if (filename.isEmpty()) {
+                JOptionPane.showMessageDialog(frame, "Filename is required!", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
-                if (!hiddenMessageType.equals("text") && !hiddenMessageType.equals("png") && !hiddenMessageType.equals("lw")) {
-                    JOptionPane.showMessageDialog(frame, "Invalid HiddenMessageType!", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
+            assert hiddenMessageType != null;
+            if (!hiddenMessageType.equals("text") && !hiddenMessageType.equals("png") && !hiddenMessageType.equals("lw")) {
+                JOptionPane.showMessageDialog(frame, "Invalid HiddenMessageType!", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
-                // Simulating output (replace with actual extract function call)
-                String outputStr = String.format(
-                        "Running extract with:\nFilename: %s\nHiddenMessageType: %s\nLRTBOrTBLR: %s\nRORFOrSLength: %s\nRORFOrSData: %s",
-                        filename, hiddenMessageType, lrtbOrTblr, rorfOrsLength, rorfOrsData
-                );
-                try {
-                    Phase1.main(new String[]{filename, hiddenMessageType, lrtbOrTblr, rorfOrsLength, rorfOrsData, arrayOfLeastSignificantBits, numberOfPixelChannels, arrayOfPixelChannels});
-                    outputArea.setText(outputStr);
-                    outputArea.append("Check local directory /Decoding");
-                } catch (Exception ex) {
-                    outputArea.append(ex.getMessage());
-                }
+            // Simulating output (replace with actual extract function call)
+            String outputStr = String.format(
+                    "Running extract with:\nFilename: %s\nHiddenMessageType: %s\nLRTBOrTBLR: %s\nRORFOrSLength: %s\nRORFOrSData: %s",
+                    filename, hiddenMessageType, lrtbOrTblr, rorfOrsLength, rorfOrsData
+            );
+            try {
+                Phase1.main(new String[]{filename, hiddenMessageType, lrtbOrTblr, rorfOrsLength, rorfOrsData, arrayOfLeastSignificantBits, numberOfPixelChannels, arrayOfPixelChannels});
+                outputArea.setText(outputStr);
+                outputArea.append("Check local directory /Decoding");
+            } catch (Exception ex) {
+                outputArea.append(ex.getMessage());
             }
         });
 
